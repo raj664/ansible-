@@ -1,0 +1,56 @@
+---
+
+- name: creating a user with sudo pervilges on target machine webR1
+  hosts: webR1
+  gather_facts: no
+  become_user: root
+  remote_user: root
+ 
+  vars:
+    remote_user: 'ansadm'
+    remote_user1: 'node2'
+  
+  tasks:
+    - name: update yum cache
+      yum:
+        update_cache: yes
+        update_only:   yes
+        use_backend: yum
+      become: yes
+     # when: ansible_facts['os_family'] == "RedHat"
+
+
+    - name: creating user on target nodes webR1
+      user:
+        name: "{{ remote_user }}"
+        password: '$6$rounds=656000$nKmf6WS3KcQUYvql$RYKVpfwn8abFQnxXvDatcen.2c0RrUHVihG2yMXeNPrCgMup5azfeILb4Hf7p8VtszOLmAlAVoOG3TvP0fRz31'
+        shell:  /bin/bash
+        state: present
+        home: /home/ "{{ remote_user }}"
+      become:  yes
+   
+    - name: create wheel group 
+      group:
+        name: wheel
+        state: present
+
+    - name: granting the sudo previliges to remote user
+      lineinfile:
+        path: /etc/sudoers
+        regexp: "{{ remote_user }} ALL"
+        line: "{{ remote_user }} ALL=(ALL) NOPASSWD: ALL"
+        state: present
+    
+     #- name: copying the public key of control to traget
+     # command: sshpass -p password ssh-copy-id -i /home/ansadmctrl/.ssh/id_rsa.pub -o StrictHostKeyChecking=no "{{ remote_user }}"@172.31.19.69
+    
+    - name: Deploying the public key in the target machine
+      authorized_key:
+        user: "{{ remote_user }}"
+        state: present
+        key: "{{ lookup('file', '/home/ansadmctrl/.ssh/id_rsa.pub') }}"
+      become: yes
+
+
+
+

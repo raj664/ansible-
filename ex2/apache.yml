@@ -1,0 +1,83 @@
+---
+
+- name: Installing a apach2 on remote machine via ansible playbooks
+  hosts: webdbserver
+  become: yes
+  become_method: sudo
+  become_user: root
+  ignore_errors: yes
+  tags: [app]
+
+  tasks:
+  - name: check wether package is installed on centos/RHEL webR1
+    yum:
+      name: "{{ item }}"
+      state: latest
+    register: is_installed
+    with_items:
+       - httpd
+     
+    when: ansible_facts['os_family'] == "RedHat"
+
+  - name: check wether package is installed on Debian/Untunu dbU1
+    apt:
+      name: "{{ item }}"
+      state: latest
+    register: is_installed
+    with_items:
+       - apache2
+
+    when: ansible_facts['os_family'] == "Debian"
+  
+  
+  - name: creating ansdir directory on remote machine (ansadm1 & ansadm2)
+    file:
+      path: var/www/html/ansdir
+      state: directory
+    become: yes
+ 
+  - name: deploying a web page  on the remote machine directory (ansdir)
+    copy:
+      src : index.html
+      dest: var/www/html/ansdir
+      mode: 0700
+      become: yes
+   
+  - name: ensure apache is running on remote machine [Debain/Ubuntu]
+    service:
+      name: "{{ item }}"
+      state: started
+      enabled: yes
+    with_items:
+       - apache2
+    when: ansible_facts['os_family'] == "Debian"
+
+  
+  - name: ensure httpd is running  on remote machine [REHL/CentOS]
+    service: 
+      name: "{{ item }}"
+      state: started
+      enabled: yes
+    with_items:
+      - httpd
+    
+    when: ansible_facts['os_family'] == "RedHat" 
+
+  - name: flues all temporaroy files on Centos/RHEL
+    service:
+      name: "{{ item }}"
+    with_items:
+      - iptables
+      - firewalld
+
+  - name: allow port 8080 anywhere
+    iptables:
+      chain:  INPUT
+      protocol: tcp
+      destination_port: 8080
+      source: 0.0.0.0/0
+      state: present
+      jump: ACCEPT
+
+
+
