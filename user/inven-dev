@@ -1,0 +1,22 @@
+#this file was created on Thu Feb 14 06:16:59 UTC 2019
+
+webR1 ansible_ssh_host=172.31.19.69 ansible_ssh_user=ansadm1 ansible_ssh_pass='hostpass.yml'
+
+
+dbU1 ansible_ssh_host=172.31.32.12 ansible_ssh_user=ansadm2 ansible_ssh_pass='hostpass1.yml'
+
+[webserver]
+webR1
+
+[dbserver]
+dbU1
+
+[webdbserver]
+webR1
+dbU1
+
+[py3-hosts]
+dbU1
+
+[py3-hosts:vars]
+ansible_python_interpreter=/usr/bin/python3
